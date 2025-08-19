@@ -50,7 +50,62 @@ The following models were trained and evaluated:
 ## 📷 Visualization
 Here is a comparison of ROC AUC scores for all models:
 
-![Model Performance](model-performanv.png)
+![Model Performance](model-performance.png)
+
+---
+
+🔬 Text Preprocessing & Feature Engineering --- How and Why
+---------------------------------------------------------
+
+### Goals
+
+-   Normalize noisy raw news text into a compact, comparable representation.
+
+-   Reduce vocabulary size and sparsity so linear/tree models learn robust patterns.
+
+-   Avoid train--test leakage by learning text statistics **only on the training split**.
+
+### Steps
+
+1.  **Regex filtering → lowercase**
+
+    -   `re.sub('[^a-zA-Z]', ' ', text)` keeps only letters and converts everything to spaces.
+
+    -   **Why:** strips punctuation, digits, and URLs that often act as noise in this task; normalizes case for consistent token matching.
+
+    -   **Trade‑off:** this *removes numbers and URLs*. If those might carry signal (e.g., "COVID‑19", links typical of fake sources), consider a more nuanced tokenizer instead of dropping them.
+
+2.  **Stopword removal (NLTK)**
+
+    -   Remove common words (e.g., *the, is, and*).
+
+    -   **Why:** these function words dominate frequency but carry little discriminative power for fake/real labels, reducing dimensionality and noise.
+
+    -   **Note:** remember to `nltk.download('stopwords')` in the environment once.
+
+3.  **Stemming (Porter)**
+
+    -   `PorterStemmer` reduces words to stems (e.g., *arguing → argu*).
+
+    -   **Why:** collapses inflected forms to a shared root, shrinking vocabulary and improving generalization for bag‑of‑words features.
+
+    -   **Alternative:** `SnowballStemmer('english')` is slightly more aggressive/consistent; **Lemmatization** (e.g., WordNet) preserves real words but needs POS info and is slower.
+
+4.  **TF--IDF vectorization (`max_features=5000`)**
+
+    -   Converts cleaned tokens to weighted features:
+
+        -   **TF**: term frequency in a document
+
+        -   **IDF**: down‑weights terms common across the corpus
+
+    -   **Why:** emphasizes rare but informative words, which helps linear and tree‑based models.
+
+    -   **Design choices:**
+
+        -   `max_features=5000` caps dimensionality to stabilize training and reduce overfitting/memory.
+
+        -   Fit the vectorizer **only on `X_train`** and transform `X_test` using the learned vocabulary to prevent leakage.
 
 ---
 
